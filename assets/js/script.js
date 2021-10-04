@@ -12,12 +12,21 @@ function onLoad() {
     $("#search-btn").css("background-color", "grey");
 
     // Updating the search history
-    historyList = JSON.parse(localStorage.getItem("history"));
-    for(let i = 0; i < historyList.length; i++) {
-        var historyItem = document.createElement("li");
-        historyItem.textContent = historyList[i];
-        document.getElementById("history-list").appendChild(historyItem);        
+    if(localStorage.length > 0) {
+        historyList = JSON.parse(localStorage.getItem("history"));
+        for(let i = 0; i < historyList.length; i++) {
+            var historyItem = document.createElement("li");
+            historyItem.textContent = historyList[i];
+            document.getElementById("history-list").appendChild(historyItem);        
+        }
     }
+
+    document.getElementById("history-list").addEventListener("click", handleHistoryClick);
+}
+
+function handleHistoryClick(e) {
+    var cityName = e.target.innerHTML;
+    runApiCall(cityName);
 }
 
 function handleInputChanged(e) {
@@ -36,83 +45,96 @@ function handleSearch(e) {
     cityName = uppercaseEachWord(cityName);
 
     if(cityName.length > 0) {
-        var apiCall = "https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&units=imperial&appid=" + API_KEY;
+        runApiCall(cityName);
 
-        fetch(apiCall)
-        .then(response => {
-            return response.json();
-        })
-        .then(data => {
-            // Error with api response
-            if(data.cod == 404) {
-                console.log(data);
-            } 
-            // Valid api response
-            else {
-                reset();
-
-                // Putting the search input in the history list
-                var historyItem = document.createElement("li");
-                historyItem.textContent = cityName;
-                document.getElementById("history-list").appendChild(historyItem);
-                historyList.push(cityName);
-                localStorage.setItem("history", JSON.stringify(historyList));
-
-                var lat = data.coord.lat;
-                var lon = data.coord.lon;
-
-                var call = "https://api.openweathermap.org/data/2.5/onecall?lat=" + lat + "&lon=" + lon + "&units=imperial&appid=" + API_KEY;
-
-                // Fetch for the weather data of last 5 days
-                fetch(call)
-                .then(callResponse => {
-                    return callResponse.json();
-                })
-                .then(weekData => {
-                    console.log(weekData);
-
-                    // Updated Current Weather
-                    var time = moment().format("MM/DD/YY");
-                    $("#city-date").html(cityName + " " + time);
-                    $("#top-temp").html("Temp: " + weekData.current.temp);
-                    $("#top-wind").html("Wind: " + weekData.current.wind_speed);
-                    $("#top-humidity").html("Humidity: " + weekData.current.humidity);
-                    $("#top-uv").html("UV Index: " + weekData.current.uvi);
-
-                    // Creating next 5 day forcast
-                    var dayDate = weekData.daily;
-                    for(let i = 0; i < 5; i++) {
-                        var dDate = moment(dayDate[i].dt, "X").format("MM/DD/YY");
-                        var dTemp = dayDate[i].temp.day;
-                        var dWind = dayDate[i].wind_speed;
-                        var dHumidity = dayDate[i].humidity;
-
-                        var card = document.createElement("div");
-                        card.classList.add("card")
-
-                        var dateEl = document.createElement("h2");
-                        dateEl.textContent = dDate;
-                        card.appendChild(dateEl);
-
-                        var tempEl = document.createElement("h4");
-                        tempEl.textContent = "Temp: " + dTemp;
-                        card.appendChild(tempEl);
-
-                        var windEl = document.createElement("h4");
-                        windEl.textContent = "Wind: " + dWind;
-                        card.appendChild(windEl);
-
-                        var humidityEl = document.createElement("h4");
-                        humidityEl.textContent = "Humidity: " + dHumidity;
-                        humidityEl.style.marginBottom = "10px";
-                        card.appendChild(humidityEl);
-
-                        document.getElementById("cards-container").appendChild(card);
-                    }
-                });
-            }
-        });       
+        // Putting the search input in the history list
+        var historyItem = document.createElement("li");
+        historyItem.textContent = cityName;
+        document.getElementById("history-list").appendChild(historyItem);
+        historyList.push(cityName);
+        localStorage.setItem("history", JSON.stringify(historyList));
     }
+}
+
+function runApiCall(cityName) {
+    var apiCall = "https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&units=imperial&appid=" + API_KEY;
+
+    fetch(apiCall)
+    .then(response => {
+        return response.json();
+    })
+    .then(data => {
+        reset();
+
+        // Error with api response
+        if(data.cod == 404) {
+            $("#city-date").text("City not found, try again!");
+
+            var historyListEl = document.getElementById("history-list");
+            historyList.pop();
+            localStorage.setItem("history", JSON.stringify(historyList));
+            historyListEl.removeChild(historyListEl.lastChild);
+        } 
+        // Valid api response
+        else {
+
+            var lat = data.coord.lat;
+            var lon = data.coord.lon;
+
+            var call = "https://api.openweathermap.org/data/2.5/onecall?lat=" + lat + "&lon=" + lon + "&units=imperial&appid=" + API_KEY;
+
+            // Fetch for the weather data of last 5 days
+            fetch(call)
+            .then(callResponse => {
+                return callResponse.json();
+            })
+            .then(weekData => {
+
+                // Updated Current Weather
+                var time = moment().format("MM/DD/YY");
+                $("#city-date").html(cityName + " " + time + " " + getWeatherEmoji(weekData.current.weather[0].main));
+                $("#top-temp").html("Temp: " + weekData.current.temp);
+                $("#top-wind").html("Wind: " + weekData.current.wind_speed);
+                $("#top-humidity").html("Humidity: " + weekData.current.humidity);
+                $("#top-uv").html("UV Index: " + weekData.current.uvi);
+
+                // Creating next 5 day forcast
+                var dayDate = weekData.daily;
+                for(let i = 0; i < 5; i++) {
+                    var dDate = moment(dayDate[i].dt, "X").format("MM/DD/YY");
+                    var dTemp = dayDate[i].temp.day;
+                    var dWind = dayDate[i].wind_speed;
+                    var dHumidity = dayDate[i].humidity;
+
+                    var card = document.createElement("div");
+                    card.classList.add("card");
+
+                    var dateEl = document.createElement("h2");
+                    dateEl.textContent = dDate;
+                    card.appendChild(dateEl);
+
+                    var emojiEl = document.createElement("h2");
+                    emojiEl.textContent = getWeatherEmoji(dayDate[i].weather[0].main);
+                    card.appendChild(emojiEl);
+
+                    var tempEl = document.createElement("h4");
+                    tempEl.textContent = "Temp: " + dTemp;
+                    card.appendChild(tempEl);
+
+                    var windEl = document.createElement("h4");
+                    windEl.textContent = "Wind: " + dWind;
+                    card.appendChild(windEl);
+
+                    var humidityEl = document.createElement("h4");
+                    humidityEl.textContent = "Humidity: " + dHumidity;
+                    humidityEl.style.marginBottom = "10px";
+                    card.appendChild(humidityEl);
+
+                    document.getElementById("cards-container").appendChild(card);
+                }
+            });
+        }
+    }); 
 }
 
 function reset() {
@@ -141,4 +163,18 @@ function uppercaseEachWord(input) {
     }
     
     return result.substring(0, result.length - 1);
+}
+
+function getWeatherEmoji(weather) {
+    if(weather === "Clouds") {
+        return "☁️";
+    } else if (weather === "Rain") {
+        return "🌧";
+    } else if (weather === "Sun") {
+        return "☀️";
+    } else if (weather === "Snow") {
+        return "❄️";
+    } else {
+        return "❓";
+    }
 }
