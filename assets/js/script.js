@@ -35,7 +35,31 @@ function handleSearch(e) {
         .then(data => {
             if(data.cod == 404) {
                 console.log(data);
+            } else {
+                var lat = data.coord.lat;
+                var lon = data.coord.lon;
+
+                var call = "https://api.openweathermap.org/data/2.5/onecall?lat=" + lat + "&lon=" + lon + "&units=imperial&appid=" + API_KEY;
+
+                // Fetch for the weather data of last 5 days
+                fetch(call)
+                .then(callResponse => {
+                    return callResponse.json();
+                })
+                .then(weekData => {
+                    console.log(weekData);
+
+                    // Updated Current Weather
+                    $("#top-temp").html("Temp: " + weekData.current.temp);
+                    $("#top-wind").html("Wind: " + weekData.current.wind_speed);
+                    $("#top-humidity").html("Humidity: " + weekData.current.humidity);
+                    $("#top-uv").html("UV Index: " + weekData.current.uvi);
+                });
             }
         });       
     }
 }
+
+function convertKelvinToF(input) {
+    return Math.round((input - 273.15) * 9/5 + 32);
+} 
