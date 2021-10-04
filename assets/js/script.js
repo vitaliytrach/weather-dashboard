@@ -11,16 +11,7 @@ function onLoad() {
     $("#search-btn").prop("disabled", true);
     $("#search-btn").css("background-color", "grey");
 
-    // Updating the search history
-    if(localStorage.length > 0) {
-        historyList = JSON.parse(localStorage.getItem("history"));
-        for(let i = 0; i < historyList.length; i++) {
-            var historyItem = document.createElement("li");
-            historyItem.textContent = historyList[i];
-            document.getElementById("history-list").appendChild(historyItem);        
-        }
-    }
-
+    generateSearchHistory();
     document.getElementById("history-list").addEventListener("click", handleHistoryClick);
 }
 
@@ -51,8 +42,12 @@ function handleSearch(e) {
         var historyItem = document.createElement("li");
         historyItem.textContent = cityName;
         document.getElementById("history-list").appendChild(historyItem);
+
+        // Adding to local storage
         historyList.push(cityName);
         localStorage.setItem("history", JSON.stringify(historyList));
+
+        $("#city-name").val("");
     }
 }
 
@@ -135,6 +130,24 @@ function runApiCall(cityName) {
             });
         }
     }); 
+}
+
+function generateSearchHistory() {
+
+    var historyListEl = document.getElementById("history-list");
+    while(historyListEl.firstChild) {
+        historyListEl.removeChild(historyListEl.firstChild);
+    }
+
+    // Updating the search history
+    if(localStorage.length > 0) {
+        historyList = JSON.parse(localStorage.getItem("history"));
+        for(let i = 0; i < historyList.length - 1; i++) {
+            var historyItem = document.createElement("li");
+            historyItem.textContent = historyList[i];
+            document.getElementById("history-list").appendChild(historyItem);        
+        }
+    }
 }
 
 function reset() {
