@@ -76,6 +76,7 @@ main {
     border-radius: 5px;
     vertical-align: middle;
     line-height: 30px;
+    list-style-type: none;
 }
 
 #right-container {
@@ -118,4 +119,8 @@ main {
 
 #cards-container h4 {
     margin-left: 10px;
+}
+
+#history-list li:hover {
+    background-color: #00a896;
 }

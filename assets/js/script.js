@@ -3,12 +3,21 @@ const API_KEY = "c449dd1cd17ade45897b4ce0f64b2a04";
 $("#city-name").on("input", handleInputChanged);
 $("#search-form").on("submit", handleSearch);
 
+var historyList = [];
 
 onLoad();
 
 function onLoad() {
     $("#search-btn").prop("disabled", true);
     $("#search-btn").css("background-color", "grey");
+
+    // Updating the search history
+    historyList = JSON.parse(localStorage.getItem("history"));
+    for(let i = 0; i < historyList.length; i++) {
+        var historyItem = document.createElement("li");
+        historyItem.textContent = historyList[i];
+        document.getElementById("history-list").appendChild(historyItem);        
+    }
 }
 
 function handleInputChanged(e) {
@@ -24,6 +33,7 @@ function handleInputChanged(e) {
 function handleSearch(e) {
     e.preventDefault();
     var cityName = $("#city-name").val();
+    cityName = uppercaseEachWord(cityName);
 
     if(cityName.length > 0) {
         var apiCall = "https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&units=imperial&appid=" + API_KEY;
@@ -33,9 +43,21 @@ function handleSearch(e) {
             return response.json();
         })
         .then(data => {
+            // Error with api response
             if(data.cod == 404) {
                 console.log(data);
-            } else {
+            } 
+            // Valid api response
+            else {
+                reset();
+
+                // Putting the search input in the history list
+                var historyItem = document.createElement("li");
+                historyItem.textContent = cityName;
+                document.getElementById("history-list").appendChild(historyItem);
+                historyList.push(cityName);
+                localStorage.setItem("history", JSON.stringify(historyList));
+
                 var lat = data.coord.lat;
                 var lon = data.coord.lon;
 
@@ -58,7 +80,6 @@ function handleSearch(e) {
                     $("#top-uv").html("UV Index: " + weekData.current.uvi);
 
                     // Creating next 5 day forcast
-
                     var dayDate = weekData.daily;
                     for(let i = 0; i < 5; i++) {
                         var dDate = moment(dayDate[i].dt, "X").format("MM/DD/YY");
@@ -94,6 +115,30 @@ function handleSearch(e) {
     }
 }
 
+function reset() {
+    $("#city-date").html("");
+    $("#top-temp").html("Temp:");
+    $("#top-wind").html("Wind:");
+    $("#top-humidity").html("Humidity:");
+    $("#top-uv").html("UV Index:");
+
+    var cList = document.getElementById("cards-container");
+    while(cList.firstChild) {
+        cList.removeChild(cList.firstChild);
+    }
+}
+
 function convertKelvinToF(input) {
     return Math.round((input - 273.15) * 9/5 + 32);
 } 
+
+function uppercaseEachWord(input) {
+    const words = input.split(" ");
+    var result = "";
+
+    for(let i = 0; i < words.length; i++) {
+        result += words[i][0].toUpperCase() + words[i].substring(1) + " ";
+    }
+    
+    return result.substring(0, result.length - 1);
+}
