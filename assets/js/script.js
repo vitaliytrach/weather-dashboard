@@ -50,10 +50,44 @@ function handleSearch(e) {
                     console.log(weekData);
 
                     // Updated Current Weather
+                    var time = moment().format("MM/DD/YY");
+                    $("#city-date").html(cityName + " " + time);
                     $("#top-temp").html("Temp: " + weekData.current.temp);
                     $("#top-wind").html("Wind: " + weekData.current.wind_speed);
                     $("#top-humidity").html("Humidity: " + weekData.current.humidity);
                     $("#top-uv").html("UV Index: " + weekData.current.uvi);
+
+                    // Creating next 5 day forcast
+
+                    var dayDate = weekData.daily;
+                    for(let i = 0; i < 5; i++) {
+                        var dDate = moment(dayDate[i].dt, "X").format("MM/DD/YY");
+                        var dTemp = dayDate[i].temp.day;
+                        var dWind = dayDate[i].wind_speed;
+                        var dHumidity = dayDate[i].humidity;
+
+                        var card = document.createElement("div");
+                        card.classList.add("card")
+
+                        var dateEl = document.createElement("h2");
+                        dateEl.textContent = dDate;
+                        card.appendChild(dateEl);
+
+                        var tempEl = document.createElement("h4");
+                        tempEl.textContent = "Temp: " + dTemp;
+                        card.appendChild(tempEl);
+
+                        var windEl = document.createElement("h4");
+                        windEl.textContent = "Wind: " + dWind;
+                        card.appendChild(windEl);
+
+                        var humidityEl = document.createElement("h4");
+                        humidityEl.textContent = "Humidity: " + dHumidity;
+                        humidityEl.style.marginBottom = "10px";
+                        card.appendChild(humidityEl);
+
+                        document.getElementById("cards-container").appendChild(card);
+                    }
                 });
             }
         });       

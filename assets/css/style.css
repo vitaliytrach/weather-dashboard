@@ -97,11 +97,25 @@ main {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    width: fit-content;
+    width: 150px;
+    border-radius: 5px;
 }
 
 #cards-container {
-    display: flex;
-    flex-direction: row;
+    display: inline-flex;
     flex-wrap: wrap;
+    justify-content: space-evenly;
+}
+
+#cards-container > div {
+    margin: 15px;
+}
+
+#cards-container h2 {
+    margin-left: 10px;
+    margin-top: 10px;
+}
+
+#cards-container h4 {
+    margin-left: 10px;
 }
